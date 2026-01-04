@@ -2,31 +2,24 @@ pipeline {
     agent any
 
     stages {
-        stage('Clone Repository') {
+        stage('Checkout') {
             steps {
-                git 'https://github.com/vs-mscit-1709/final-devops-project.git'
+                git branch: 'main',
+                    url: 'https://github.com/vs-mscit-1709/final-devops-project.git'
             }
         }
 
-        stage('Build Docker Image') {
+        stage('Build & Push Docker Image') {
             steps {
                 script {
-                    docker.build("mrcyber17/devops-app")
+                    // Log in to Docker Hub using credentials in Jenkins
+                    docker.withRegistry('https://index.docker.io/v1/', 'docker-hub') {
+                        // Build Docker image with the full Docker Hub tag
+                        def app = docker.build("mrcyber17/devops-app:latest")
+                        // Push the image to Docker Hub
+                        app.push()
+                    }
                 }
-            }
-        }
-
-        stage('Push Image to Docker Hub') {
-            steps {
-                withDockerRegistry([credentialsId: 'docker-hub']) {
-                    docker.image("mrcyber17/devops-app").push("latest")
-                }
-            }
-        }
-
-        stage('Run Container') {
-            steps {
-                sh 'docker run -d -p 3000:3000 mrcyber17/devops-app'
             }
         }
     }
